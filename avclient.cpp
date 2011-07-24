@@ -30,11 +30,11 @@ QNetworkReply* AVClient::Browse(const QString& parent_id) {
 
   qDebug() << "Browsing" << parent_id;
 
-  return Request("browseService", "getItems", params);
+  return Request("browseService", "getItems", QVariant::fromValue(params));
 }
 
 QNetworkReply* AVClient::Request(const char* service, const char* method,
-                                 const AVDict& params) {
+                                 const QVariant& param) {
   QNetworkRequest req(url_);
   req.setRawHeader("User-Agent", "AirVideo/2.4.0 CFNetwork/459 Darwin/10.0.0d3");
   req.setRawHeader("Accept-Language", "en-us");
@@ -45,7 +45,7 @@ QNetworkReply* AVClient::Request(const char* service, const char* method,
   data["serviceName"] = service;
   data["methodName"] = method;
   data["clientIdentifier"] = kClientIdentifier;
-  data["parameters"] = QVariantList() << QVariant::fromValue(params);
+  data["parameters"] = QVariantList() << param;
 
   QBuffer buffer;
   buffer.open(QIODevice::WriteOnly);
@@ -91,11 +91,11 @@ QList<AVClient::Object> AVClient::ParseBrowseReply(QNetworkReply* reply) {
     Object object;
     if (data.name() == "air.video.DiskRootFolder" ||
         data.name() == "air.video.Folder") {
-      object.type_ = Object::Type_Folder;
+      object.type_ = VideoModel::Type_Folder;
     } else if (data.name() == "air.video.VideoItem") {
-      object.type_ = Object::Type_Video;
+      object.type_ = VideoModel::Type_Video;
     } else {
-      object.type_ = Object::Type_Unknown;
+      object.type_ = VideoModel::Type_Unknown;
     }
     object.name_ = data["name"].toString();
     object.item_id_ = data["itemId"].toString();
@@ -103,6 +103,53 @@ QList<AVClient::Object> AVClient::ParseBrowseReply(QNetworkReply* reply) {
 
     qWarning() << "Browse reply contained" << object.name_ << object.item_id_;
   }
+
+  return ret;
+}
+
+QNetworkReply* AVClient::GetMediaInfo(const QString& item_id) {
+  return Request("browseService", "getItemsWithDetail", QVariantList() << item_id);
+}
+
+AVClient::MediaInfo AVClient::ParseGetMediaInfoReply(QNetworkReply* reply) {
+  MediaInfo ret;
+
+  AVStream stream(reply);
+  QVariant data(stream.Read());
+  if (!data.canConvert<AVDict>()) {
+    qWarning() << "GetDetails reply was not a dict";
+    return ret;
+  }
+
+  AVDict dict = data.value<AVDict>();
+  if (dict.name() != "air.connect.Response" || !dict.contains("result")) {
+    qWarning() << "Unexpected dict type" << dict.name();
+    return ret;
+  }
+
+  QVariantList results = dict["result"].toList();
+  if (results.count() != 1) {
+    qWarning() << "GetDetails contained" << results.count() << "results";
+    return ret;
+  }
+
+  dict = results[0].value<AVDict>();
+  if (dict.name() != "air.video.VideoItem" || !dict.contains("detail")) {
+    qWarning() << "GetDetails result of bad type" << dict.name();
+    return ret;
+  }
+
+  dict = dict["detail"].value<AVDict>();
+  if (dict.name() != "air.video.MediaInfo") {
+    qWarning() << "GetDetails detail of bad type" << dict.name();
+    return ret;
+  }
+
+  ret.valid_ = true;
+  ret.filesize_ = dict["fileSize"].toLongLong();
+  ret.duration_ = dict["duration"].toDouble();
+  ret.thumbnail_ = dict["videoThumbnail"].toByteArray();
+  qDebug() << ret.filesize_ << ret.duration_ << ret.thumbnail_.size();
 
   return ret;
 }

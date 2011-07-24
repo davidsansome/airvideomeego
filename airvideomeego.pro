@@ -25,7 +25,8 @@ symbian:TARGET.CAPABILITY += NetworkServices
 SOURCES += main.cpp \
     wireformat.cpp \
     avclient.cpp \
-    videomodel.cpp
+    videomodel.cpp \
+    videomodelthumbnailprovider.cpp
 
 
 OTHER_FILES += \
@@ -58,4 +59,5 @@ QT += network
 HEADERS += \
     wireformat.h \
     avclient.h \
-    videomodel.h
+    videomodel.h \
+    videomodelthumbnailprovider.h

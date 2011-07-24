@@ -33,7 +33,7 @@ class AVStream {
 public:
   AVStream(QIODevice* device);
 
-  void Write(int value, int counter = 0);
+  void Write(qint32 value, int counter = 0);
   void Write(double value, int counter = 0);
   void Write(const QString& value, int counter = 0);
   void Write(const AVDict& value, int counter = 0);
@@ -41,7 +41,8 @@ public:
   void Write(const AVBitrateList& value, int counter = 0);
   void Write(const QVariant& value, int counter = 0);
 
-  int ReadInt();
+  qint32 ReadInt32();
+  qint64 ReadInt64();
   double ReadDouble();
   QString ReadString();
   AVDict ReadDict();
@@ -53,7 +54,7 @@ public:
 private:
   void WriteRawInt(int value);
   int ReadRawInt();
-  static void NtohDouble(QByteArray* value);
+  static void Ntoh64(QByteArray* value);
 
 private:
   QIODevice* device_;

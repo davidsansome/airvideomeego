@@ -1,6 +1,8 @@
 import QtQuick 1.1
 import com.meego 1.0
 
+import AirVideo 1.0
+
 Page {
   id: browse_page
 
@@ -11,9 +13,7 @@ Page {
 
     ToolIcon {
       platformIconId: "toolbar-back";
-      onClicked: {
-        pageStack.pop();
-      }
+      onClicked: pageStack.pop();
     }
 
     ToolIcon {
@@ -30,22 +30,49 @@ Page {
       height: 88
       width: parent.width
 
-      Row {
-        anchors.fill: parent
+      Image {
+        id: icon
+        anchors.left: parent.left
+        anchors.verticalCenter: parent.verticalCenter
+
+        source: (type == VideoModel.Type_Folder)
+                  ? "image://theme/icon-m-common-directory"
+                  : (is_contents_loaded)
+                      ? "image://" + video_model.thumbnail_provider_name + "/" + id
+                      : "image://theme/icon-m-content-video"
+      }
+
+      Column {
+        anchors.left: icon.right
+        anchors.leftMargin: 6
+        anchors.right: right_icon.left
+        anchors.rightMargin: 6
+        anchors.verticalCenter: parent.verticalCenter
 
         Text {
-          anchors.verticalCenter: parent.verticalCenter
+          text: name
+
           font.family: "Nokia Pure Text"
           font.pixelSize: 26
           font.bold: true
-          text: model.display
+          elide: Text.ElideRight
+        }
+
+        Text {
+          text: file_size + ", " + duration
+          visible: type == VideoModel.Type_Video
+
+          font.pixelSize: 20
+          color: "#cc6633"
         }
       }
 
       Image {
-        source: "image://theme/icon-m-common-drilldown-arrow" + (theme.inverted ? "-inverse" : "")
-        anchors.right: parent.right;
+        id: right_icon
+        anchors.right: parent.right
         anchors.verticalCenter: parent.verticalCenter
+
+        source: "image://theme/icon-m-common-drilldown-arrow" + (theme.inverted ? "-inverse" : "")
       }
 
       MouseArea {

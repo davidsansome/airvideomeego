@@ -29,7 +29,7 @@ void AVStream::WriteRawInt(int value) {
   device_->write(reinterpret_cast<const char*>(&big_endian_value), 4);
 }
 
-void AVStream::Write(int value, int) {
+void AVStream::Write(qint32 value, int) {
   device_->write("i", 1);
   WriteRawInt(value);
 }
@@ -39,7 +39,7 @@ void AVStream::Write(double value, int) {
 
   QByteArray data(8, '\0');
   memcpy(data.data(), &value, 8);
-  NtohDouble(&data);
+  Ntoh64(&data);
   device_->write(data);
 }
 
@@ -121,11 +121,18 @@ int AVStream::ReadRawInt() {
   return *reinterpret_cast<int*>(&value);
 }
 
-int AVStream::ReadInt() {
+qint32 AVStream::ReadInt32() {
   return ReadRawInt();
 }
 
-void AVStream::NtohDouble(QByteArray* value) {
+qint64 AVStream::ReadInt64() {
+  QByteArray value = device_->read(8);
+  Ntoh64(&value);
+
+  return *reinterpret_cast<const qint64*>(value.constData());
+}
+
+void AVStream::Ntoh64(QByteArray* value) {
 #if Q_BYTE_ORDER == Q_LITTLE_ENDIAN
   char* data = value->data();
 
@@ -138,7 +145,7 @@ void AVStream::NtohDouble(QByteArray* value) {
 
 double AVStream::ReadDouble() {
   QByteArray value = device_->read(8);
-  NtohDouble(&value);
+  Ntoh64(&value);
 
   return *reinterpret_cast<const double*>(value.constData());
 }
@@ -190,7 +197,8 @@ QVariant AVStream::Read() {
   }
 
   switch (type) {
-    case 'i': return ReadInt();
+    case 'i': return ReadInt32();
+    case 'l': return ReadInt64();
     case 'f': return ReadDouble();
     case 's': return ReadString();
     case 'n': return QVariant();

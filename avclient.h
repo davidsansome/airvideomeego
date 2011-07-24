@@ -1,6 +1,8 @@
 #ifndef AVCLIENT_H
 #define AVCLIENT_H
 
+#include "videomodel.h"
+
 #include <QMetaType>
 #include <QString>
 #include <QUrl>
@@ -20,25 +22,33 @@ public:
   static const char* kClientIdentifier;
 
   struct Object {
-    enum Type {
-      Type_Unknown,
-      Type_Folder,
-      Type_Video,
-    };
+    Object() : type_(VideoModel::Type_Unknown) {}
 
-    Type type_;
+    VideoModel::Type type_;
     QString name_;
     QString item_id_;
     QString parent_id_;
+  };
+
+  struct MediaInfo {
+    MediaInfo() : valid_(false), filesize_(0), duration_(0.0) {}
+
+    bool valid_;
+    qint64 filesize_;  // bytes
+    double duration_;  // seconds
+    QByteArray thumbnail_;
   };
 
 
   QNetworkReply* Browse(const QString& parent_id);
   QList<Object> ParseBrowseReply(QNetworkReply* reply);
 
+  QNetworkReply* GetMediaInfo(const QString& item_id);
+  AVClient::MediaInfo ParseGetMediaInfoReply(QNetworkReply* reply);
+
 private:
   Q_DISABLE_COPY(AVClient)
-  QNetworkReply* Request(const char* service, const char* method, const AVDict& params);
+  QNetworkReply* Request(const char* service, const char* method, const QVariant& params);
 
 private:
   QNetworkAccessManager* network_;
