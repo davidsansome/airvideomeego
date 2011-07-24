@@ -13,7 +13,6 @@ VideoModel::VideoModel(QObject* parent)
   role_names[Role_ID] = "id";
   role_names[Role_Type] = "type";
   setRoleNames(role_names);
-  qDebug() << role_names;
 
   Reset();
 }
@@ -58,8 +57,6 @@ void VideoModel::BrowseRequestFinished() {
   parent_item->setData(true, Role_IsContentsLoaded);
 
   QList<AVClient::Object> children = client_->ParseBrowseReply(reply);
-
-  qDebug() << "Appending" << children.count() << "items to" << parent_item->text();
 
   foreach (const AVClient::Object& child, children) {
     QStandardItem* item = new QStandardItem;

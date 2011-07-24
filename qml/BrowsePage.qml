@@ -2,14 +2,17 @@ import QtQuick 1.1
 import com.meego 1.0
 
 Page {
-  id: mainPage
+  id: browse_page
+
+  property alias root_index: visual_video_model.rootIndex
+
   tools: ToolBarLayout {
     visible: true
 
     ToolIcon {
       platformIconId: "toolbar-back";
       onClicked: {
-        visual_video_model.rootIndex = visual_video_model.parentModelIndex()
+        pageStack.pop();
       }
     }
 
@@ -39,12 +42,18 @@ Page {
         }
       }
 
+      Image {
+        source: "image://theme/icon-m-common-drilldown-arrow" + (theme.inverted ? "-inverse" : "")
+        anchors.right: parent.right;
+        anchors.verticalCenter: parent.verticalCenter
+      }
+
       MouseArea {
         anchors.fill: parent
         onClicked: {
-          console.log("Setting new index to " + index)
-          console.log(visual_video_model.modelIndex(index));
-          visual_video_model.rootIndex = visual_video_model.modelIndex(index)
+          pageStack.push(Qt.resolvedUrl("BrowsePage.qml"), {
+            root_index: visual_video_model.modelIndex(index)
+          })
         }
       }
     }

@@ -4,9 +4,9 @@ import com.meego 1.0
 PageStackWindow {
   id: appWindow
 
-  initialPage: mainPage
+  initialPage: main_browse_page
 
-  MainPage{id: mainPage}
+  BrowsePage {id: main_browse_page}
 
   Menu {
     id: myMenu

@@ -29,7 +29,7 @@ SOURCES += main.cpp \
 
 
 OTHER_FILES += \
-    qml/MainPage.qml \
+    qml/BrowsePage.qml \
     qml/main.qml \
     airvideomeego.desktop \
     airvideomeego.svg \
