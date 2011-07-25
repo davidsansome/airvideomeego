@@ -2,6 +2,7 @@ import QtQuick 1.1
 import com.meego 1.0
 
 import AirVideo 1.0
+import "utilities.js" as Utilities
 
 Page {
   id: browse_page
@@ -30,18 +31,24 @@ Page {
       height: 88
       width: parent.width
 
+      // The thumbnail or folder icon
       Image {
         id: icon
         anchors.left: parent.left
         anchors.verticalCenter: parent.verticalCenter
+
+        width: type == VideoModel.Type_Video ? 155 : undefined
+        fillMode: Image.PreserveAspectFit
 
         source: (type == VideoModel.Type_Folder)
                   ? "image://theme/icon-m-common-directory"
                   : (is_contents_loaded)
                       ? "image://" + video_model.thumbnail_provider_name + "/" + id
                       : "image://theme/icon-m-content-video"
+        asynchronous: true
       }
 
+      // The item name and information
       Column {
         anchors.left: icon.right
         anchors.leftMargin: 6
@@ -49,8 +56,10 @@ Page {
         anchors.rightMargin: 6
         anchors.verticalCenter: parent.verticalCenter
 
+        // Item name
         Text {
           text: name
+          width: parent.width
 
           font.family: "Nokia Pure Text"
           font.pixelSize: 26
@@ -58,8 +67,15 @@ Page {
           elide: Text.ElideRight
         }
 
+        // Item information
         Text {
-          text: file_size + ", " + duration
+          text: is_contents_loaded
+                  ? is_video_valid
+                    ? Utilities.pretty_duration(duration) + ", " +
+                      Utilities.pretty_size(file_size)
+                    : "Error loading video"
+                  : "Loading..."
+
           visible: type == VideoModel.Type_Video
 
           font.pixelSize: 20

@@ -1,8 +1,13 @@
 #include "avclient.h"
+#include "filenameparser.h"
 #include "videomodel.h"
 
 #include <QNetworkReply>
+#include <QTimerEvent>
 #include <QtDebug>
+
+const int VideoModel::kMaxAttempts = 6;
+const int VideoModel::kRetryDelayMs = 500;
 
 VideoModel::VideoModel(QObject* parent)
   : QStandardItemModel(parent),
@@ -71,15 +76,25 @@ void VideoModel::BrowseRequestFinished() {
 
   QList<AVClient::Object> children = client_->ParseBrowseReply(reply);
 
+  QStringList filenames;
+  foreach (const AVClient::Object& child, children) {
+    if (child.type_ == Type_Video) {
+      filenames << child.name_;
+    }
+  }
+
+  FilenameParser parser(filenames);
+
+  int i = 0;
   foreach (const AVClient::Object& child, children) {
     // Create an item for this child
     QStandardItem* item = new QStandardItem;
-    item->setData(child.name_, Role_Name);
     item->setData(child.item_id_, Role_ID);
     item->setData(child.type_, Role_Type);
     item->setData(false, Role_IsContentsLoaded);
+    item->setData(0, Role_CurrentAttempt);
 
-    item->setText(child.name_);
+    QString name = child.name_;
 
     items_by_id_[child.item_id_] = item;
     parent_item->appendRow(item);
@@ -90,7 +105,24 @@ void VideoModel::BrowseRequestFinished() {
       connect(details_reply, SIGNAL(finished()), SLOT(GetMediaInfoRequestFinished()));
 
       media_info_requests_[details_reply] = child.item_id_;
+
+      FilenameParser::Information info = parser.Parse(i++);
+
+      name = QString();
+      if (info.series_ != -1) {
+        name += QString("S%1").arg(info.series_, 2, 10, QChar('0'));
+      }
+      if (info.episode_ != -1) {
+        name += QString("E%1").arg(info.episode_, 2, 10, QChar('0'));
+      }
+
+      if (!name.isEmpty()) {
+        name += " ";
+      }
+      name += info.name_;
     }
+
+    item->setData(name, Role_Name);
   }
 }
 
@@ -101,21 +133,50 @@ void VideoModel::GetMediaInfoRequestFinished() {
     return;
   }
 
-  QString item_id = media_info_requests_.take(reply);
+  const QString item_id = media_info_requests_.take(reply);
   QStandardItem* item = items_by_id_[item_id];
 
   AVClient::MediaInfo info = client_->ParseGetMediaInfoReply(reply);
 
-  qDebug() << "Setting data for" << item_id;
-  if (info.valid_) {
-    item->setData(info.duration_, Role_Duration);
-    item->setData(info.filesize_, Role_FileSize);
-    item->setData(info.thumbnail_, Role_ThumbnailData);
+  if (!info.valid_) {
+    // It's possible the data is still loading on the server - try again later.
+    const int current_attempt = item->data(Role_CurrentAttempt).toInt();
+    if (current_attempt >= kMaxAttempts - 1) {
+      qDebug() << "Failed to get media info for" << item_id << "after"
+               << kMaxAttempts << "attempts";
+      item->setData(true, Role_IsContentsLoaded);
+      return;
+    }
+
+    item->setData(current_attempt + 1, Role_CurrentAttempt);
+
+    const int timer_id = startTimer(kRetryDelayMs);
+    media_info_retries_[timer_id] = item_id;
+    return;
   }
-  item->setData(info.valid_, Role_IsVideoValid);
+
+  item->setData(info.duration_, Role_Duration);
+  item->setData(info.filesize_, Role_FileSize);
+  item->setData(info.thumbnail_, Role_ThumbnailData);
+  item->setData(true, Role_IsVideoValid);
   item->setData(true, Role_IsContentsLoaded);
 
   qDebug() << "Finished setting data for" << item_id;
+}
+
+void VideoModel::timerEvent(QTimerEvent* e) {
+  const int timer_id = e->timerId();
+  if (!media_info_retries_.contains(timer_id)) {
+    QObject::timerEvent(e);
+    return;
+  }
+
+  killTimer(timer_id);
+  const QString item_id = media_info_retries_.take(timer_id);
+  QNetworkReply* details_reply = client_->GetMediaInfo(item_id);
+  connect(details_reply, SIGNAL(finished()), SLOT(GetMediaInfoRequestFinished()));
+
+  media_info_requests_[details_reply] = item_id;
 }
 
 bool VideoModel::hasChildren(const QModelIndex& parent) const {

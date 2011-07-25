@@ -3,8 +3,8 @@
 
 #include <QtDebug>
 
-const int VideoModelThumbnailProvider::kMaxWidth = 144; // 16:9
-const int VideoModelThumbnailProvider::kMaxHeight = 81;
+const int VideoModelThumbnailProvider::kMaxWidth = 155; // 16:9 ish
+const int VideoModelThumbnailProvider::kMaxHeight = 87;
 
 VideoModelThumbnailProvider::VideoModelThumbnailProvider(VideoModel* model)
   : QDeclarativeImageProvider(Image),
@@ -13,7 +13,7 @@ VideoModelThumbnailProvider::VideoModelThumbnailProvider(VideoModel* model)
 }
 
 QImage VideoModelThumbnailProvider::requestImage(
-    const QString& id, QSize* size, const QSize& requested_size) {
+    const QString& id, QSize* size, const QSize&) {
   QByteArray data(model_->ThumbnailData(id));
   QImage image = QImage::fromData(data);
 

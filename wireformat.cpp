@@ -125,6 +125,13 @@ qint32 AVStream::ReadInt32() {
   return ReadRawInt();
 }
 
+quint32 AVStream::ReadUInt32() {
+  QByteArray value = device_->read(4);
+  Ntoh32(&value);
+
+  return *reinterpret_cast<const quint32*>(value.constData());
+}
+
 qint64 AVStream::ReadInt64() {
   QByteArray value = device_->read(8);
   Ntoh64(&value);
@@ -140,6 +147,15 @@ void AVStream::Ntoh64(QByteArray* value) {
   std::swap(data[1], data[6]);
   std::swap(data[2], data[5]);
   std::swap(data[3], data[4]);
+#endif
+}
+
+void AVStream::Ntoh32(QByteArray* value) {
+#if Q_BYTE_ORDER == Q_LITTLE_ENDIAN
+  char* data = value->data();
+
+  std::swap(data[0], data[3]);
+  std::swap(data[1], data[2]);
 #endif
 }
 
@@ -198,6 +214,7 @@ QVariant AVStream::Read() {
 
   switch (type) {
     case 'i': return ReadInt32();
+    case 'r': return ReadUInt32();
     case 'l': return ReadInt64();
     case 'f': return ReadDouble();
     case 's': return ReadString();

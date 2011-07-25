@@ -26,7 +26,8 @@ SOURCES += main.cpp \
     wireformat.cpp \
     avclient.cpp \
     videomodel.cpp \
-    videomodelthumbnailprovider.cpp
+    videomodelthumbnailprovider.cpp \
+    filenameparser.cpp
 
 
 OTHER_FILES += \
@@ -40,7 +41,8 @@ OTHER_FILES += \
     qtc_packaging/debian_harmattan/copyright \
     qtc_packaging/debian_harmattan/control \
     qtc_packaging/debian_harmattan/compat \
-    qtc_packaging/debian_harmattan/changelog
+    qtc_packaging/debian_harmattan/changelog \
+    qml/utilities.js
 
 RESOURCES += \
     res.qrc
@@ -51,7 +53,7 @@ qtcAddDeployment()
 
 # enable booster
 CONFIG += qdeclarative-boostable
-QMAKE_CXXFLAGS += -fPIC -fvisibility=hidden -fvisibility-inlines-hidden
+QMAKE_CXXFLAGS += -fPIC -fvisibility=hidden -fvisibility-inlines-hidden -Wno-psabi
 QMAKE_LFLAGS += -pie -rdynamic
 
 QT += network
@@ -60,4 +62,5 @@ HEADERS += \
     wireformat.h \
     avclient.h \
     videomodel.h \
-    videomodelthumbnailprovider.h
+    videomodelthumbnailprovider.h \
+    filenameparser.h

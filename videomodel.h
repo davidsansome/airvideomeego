@@ -20,11 +20,15 @@ public:
   VideoModel(QObject* parent = 0);
   ~VideoModel();
 
+  static const int kMaxAttempts;
+  static const int kRetryDelayMs;
+
   enum Role {
     Role_Name = Qt::UserRole + 1,
     Role_ID,
     Role_Type,
 
+    Role_CurrentAttempt,
     Role_IsContentsLoaded,
 
     // For video only
@@ -52,8 +56,8 @@ public:
   bool canFetchMore(const QModelIndex& parent) const;
   void fetchMore(const QModelIndex& parent);
 
-  // QDeclarativeImageProvider
-  QImage requestImage(const QString& id, QSize* size, const QSize& requestedSize);
+  // QObject
+  void timerEvent(QTimerEvent* e);
 
 private:
   void Browse(const QString& parent_id);
@@ -68,6 +72,8 @@ private:
   QMap<QString, QStandardItem*> items_by_id_;
   QMap<QNetworkReply*, QString> browse_requests_;
   QMap<QNetworkReply*, QString> media_info_requests_;
+
+  QMap<int, QString> media_info_retries_;
 };
 
 #endif // VIDEOMODEL_H

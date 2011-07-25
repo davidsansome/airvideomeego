@@ -42,6 +42,7 @@ public:
   void Write(const QVariant& value, int counter = 0);
 
   qint32 ReadInt32();
+  quint32 ReadUInt32();
   qint64 ReadInt64();
   double ReadDouble();
   QString ReadString();
@@ -55,6 +56,7 @@ private:
   void WriteRawInt(int value);
   int ReadRawInt();
   static void Ntoh64(QByteArray* value);
+  static void Ntoh32(QByteArray* value);
 
 private:
   QIODevice* device_;

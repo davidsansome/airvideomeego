@@ -2,5 +2,6 @@
     <qresource prefix="/">
         <file>qml/main.qml</file>
         <file>qml/BrowsePage.qml</file>
+        <file>qml/utilities.js</file>
     </qresource>
 </RCC>
